@@ -20,6 +20,30 @@ const CARBS = ["riz complet","patate douce","quinoa","flocons d'avoine","pain co
 const VEGS = ["brocoli + courgette","épinards + tomates","haricots verts + carottes","salade verte + concombre","poivrons + champignons","fenouil + céleri","asperges + courgette","chou-fleur + carottes","roquette + tomates cerises","endives + betterave"];
 const getMeals = n => ({ protein:PROTEINS[(n-1)%PROTEINS.length], carb:CARBS[(n-1)%CARBS.length], veg:VEGS[(n-1)%VEGS.length], bfProtein:PROTEINS[(n+4)%PROTEINS.length] });
 
+const getFallbackPlan = (dayNum) => {
+  const isCF=isCrossfitDay(dayNum), isRest=isRestDay(dayNum);
+  const {protein,carb,veg}=getMeals(dayNum);
+  return {
+    motiv:{message:"Chaque jour est une nouvelle chance. Lance-toi !",mantra:"Un jour à la fois"},
+    repas:{
+      matin:{titre:"Petit-déj protéiné",description:`3 œufs brouillés + 40g flocons d'avoine + 1 banane`,calories:isCF?450:350,conseil:"Mange lentement, mâche bien"},
+      midi:{titre:"Bowl équilibré",description:`150g ${protein} + 80g ${carb} + ${veg} vapeur`,calories:isCF?600:500,conseil:"Bois 300ml d'eau avant de manger"},
+      soir:{titre:"Dîner léger",description:`200g ${protein} grillé + légumes vapeur sans sel`,calories:isCF?500:420,conseil:"Dernier repas avant 20h"},
+    },
+    sport:{
+      type:isCF?"CrossFit WOD":isRest?"Repos actif":"Marche active",
+      dureeTotal:isCF?60:isRest?0:45,
+      description:isCF?"Séance CrossFit à la box — échauffement + WOD + récup":isRest?"Repos, étirements légers 15 min":"Marche 45 min à rythme soutenu",
+      wodFormat:isCF?"AMRAP":null,
+      exercices:isCF?[{nom:"Échauffement",details:"5 min cardio léger + mobilité",repos:""},{nom:"WOD du coach",details:"Suivre le programme de la box",repos:""},{nom:"Cool down",details:"Étirements 10 min",repos:""}]:[{nom:isRest?"Étirements":"Marche",details:isRest?"15 min de stretching global":"45 min à 6-7 km/h",repos:""}],
+      objectifPas:isCF?12000:isRest?5000:8000,
+      conseilBox:isCF?"Arrive 10 min avant, hydrate-toi bien pendant la séance":null,
+    },
+    antiGonflement:["Zéro sel ajouté dans tous tes repas","Bois 300ml d'eau dès le réveil à jeun","Évite les aliments transformés toute la journée"],
+    hydratation:{objectifLitres:isCF?3:2.5,tipDuJour:"Ajoute une rondelle de citron dans ton eau pour faciliter la digestion"},
+  };
+};
+
 const generatePlan = async (dayNum) => {
   const isCF=isCrossfitDay(dayNum), isRest=isRestDay(dayNum);
   const session=isCF?"CrossFit WOD":isRest?"Repos & Récupération":"Marche Active";
@@ -45,8 +69,12 @@ JSON UNIQUEMENT (pas de markdown ni backtick):
   try {
     const res = await fetch("/api/generate", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ prompt }) });
     const data = await res.json();
+    if (!data.text) {
+      console.error("API error:", data);
+      return getFallbackPlan(dayNum);
+    }
     return JSON.parse(data.text.replace(/```json|```/g,"").trim());
-  } catch(e) { console.error(e); return null; }
+  } catch(e) { console.error(e); return getFallbackPlan(dayNum); }
 };
 
 // ── DEBLOAT PRACTICES ──
