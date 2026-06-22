@@ -284,6 +284,13 @@ export default function App() {
     const td = {key, date:todayStr(), plan:null, completions:{sport:false,matin:false,midi:false,soir:false,eau:0}};
     await save(key, td);
     setTodayData(td);
+    setScreen("generating");
+    const plan = await generatePlan(1);
+    if (plan) {
+      const upd = {...td, plan};
+      setTodayData(upd);
+      await save(key, upd);
+    }
     setScreen("main");
   };
 
