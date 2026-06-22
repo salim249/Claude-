@@ -542,9 +542,12 @@ function Home({ plan, score, comp, dayNum, isCF, isRest, waterGoal, eauPct, debl
             </Card>
           </>
         ) : (
-          <Card style={{textAlign:"center",padding:40}}>
+          <Card style={{textAlign:"center",padding:36}}>
             <div style={{width:32,height:32,border:`3px solid rgba(255,255,255,0.08)`,borderTopColor:C.em,borderRadius:"50%",animation:"spin 0.9s linear infinite",margin:"0 auto 12px"}}/>
-            <p style={{color:C.sec,fontSize:13}}>Plan IA en cours...</p>
+            <p style={{color:C.sec,fontSize:13,marginBottom:16}}>Génération du plan IA...</p>
+            <button onClick={handleGenerate} disabled={generating} style={{background:"rgba(0,229,160,0.1)",border:"1px solid rgba(0,229,160,0.25)",color:C.em,borderRadius:12,padding:"10px 20px",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+              {generating?"⏳ En cours...":"🔄 Réessayer"}
+            </button>
           </Card>
         )}
 
