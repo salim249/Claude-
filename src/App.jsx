@@ -4,7 +4,6 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart,
 // ── Storage ──
 const load = async (key) => { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; } catch { return null; } };
 const save = async (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch(e) { console.error(e); } };
-const getApiKey = () => localStorage.getItem("anthropic-api-key") || "";
 const todayKey = () => { const d = new Date(); return `day-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const fmtDate = () => new Date().toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" });
@@ -44,10 +43,9 @@ JSON UNIQUEMENT (pas de markdown ni backtick):
 "antiGonflement":["conseil1","conseil2","conseil3"],
 "hydratation":{"objectifLitres":${isCF?3:2.5},"tipDuJour":"conseil"}}`;
   try {
-    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":getApiKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
-    const data=await res.json();
-    const text=data.content?.find(b=>b.type==="text")?.text||"";
-    return JSON.parse(text.replace(/```json|```/g,"").trim());
+    const res = await fetch("/api/generate", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ prompt }) });
+    const data = await res.json();
+    return JSON.parse(data.text.replace(/```json|```/g,"").trim());
   } catch(e) { console.error(e); return null; }
 };
 
@@ -1022,8 +1020,6 @@ function Suivi({ history, profile, checkIn, setCheckIn, handleCheckIn, todayData
 // ═══════════════════════════════════════
 function Setup({ onDone }) {
   const [poids, setPoids] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [showKey, setShowKey] = useState(false);
 
   return (
     <div style={{background:C.bg,minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",padding:24}}>
@@ -1045,15 +1041,7 @@ function Setup({ onDone }) {
         <input type="number" step="0.5" placeholder="ex: 85.0" value={poids} onChange={e=>setPoids(e.target.value)}
           style={{width:"100%",background:"rgba(255,255,255,0.05)",border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:"18px",color:C.text,fontSize:28,textAlign:"center",marginBottom:20,fontWeight:900,fontFamily:"'Space Grotesk',sans-serif",boxSizing:"border-box"}}/>
 
-        <p style={{fontWeight:700,marginBottom:4,fontFamily:"'Space Grotesk',sans-serif",fontSize:15}}>Clé API Anthropic</p>
-        <p style={{color:C.sec,fontSize:12,marginBottom:10}}>Nécessaire pour générer tes plans IA · <a href="https://console.anthropic.com/keys" target="_blank" style={{color:C.em}}>console.anthropic.com</a></p>
-        <div style={{position:"relative",marginBottom:16}}>
-          <input type={showKey?"text":"password"} placeholder="sk-ant-..." value={apiKey} onChange={e=>setApiKey(e.target.value)}
-            style={{width:"100%",background:"rgba(255,255,255,0.05)",border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:"14px 44px 14px 14px",color:C.text,fontSize:14,boxSizing:"border-box"}}/>
-          <button onClick={()=>setShowKey(!showKey)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.sec,cursor:"pointer",fontSize:16}}>{showKey?"🙈":"👁"}</button>
-        </div>
-
-        <Btn onClick={()=>{if(poids&&apiKey){localStorage.setItem("anthropic-api-key",apiKey);onDone(poids);}}} disabled={!poids||!apiKey}>Démarrer ma transformation →</Btn>
+        <Btn onClick={()=>poids&&onDone(poids)} disabled={!poids}>Démarrer ma transformation →</Btn>
       </Card>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}} className="fadeUp">
