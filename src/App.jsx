@@ -241,16 +241,18 @@ export default function App() {
     await updateToday({completions:{...todayData.completions,[k]:!todayData.completions[k]}});
   };
 
+  const getWaterGoal = () => isCrossfitDay(getDayNum()) ? 3 : 2.5;
+
   const addWater = async (amt=0.25) => {
     const cur = todayData.completions.eau || 0;
-    const next = Math.min(waterGoal, cur + amt);
+    const next = Math.min(getWaterGoal(), cur + amt);
     await updateToday({completions:{...todayData.completions,eau:Math.round(next*100)/100}});
   };
 
   const getScore = () => {
     if (!todayData) return 0;
     const c = todayData.completions;
-    return [c.matin,c.midi,c.soir,c.sport,(c.eau||0)>=waterGoal].filter(Boolean).length;
+    return [c.matin,c.midi,c.soir,c.sport,(c.eau||0)>=getWaterGoal()].filter(Boolean).length;
   };
 
   const getDebloatScore = () => {
